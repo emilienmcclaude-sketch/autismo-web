@@ -41,6 +41,9 @@ header{padding:48px 0 36px;border-bottom:1px solid var(--line);}
 .contact-btn:hover{background:var(--coral);color:var(--white);}
 .organismos-btn{border-color:#A98B5D;color:#A98B5D;}
 .organismos-btn:hover{background:#A98B5D;color:var(--white);}
+a.suggestion-btn{
+  text-decoration:none;display:flex;align-items:center;justify-content:center;text-align:center;
+}
 
 .organismos-resultado{
   margin-top:8px;margin-bottom:14px;background:var(--sand);border-radius:10px;
