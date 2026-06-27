@@ -27,6 +27,36 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
 
+  const [showSugerencia, setShowSugerencia] = useState(false);
+  const [sugerenciaTexto, setSugerenciaTexto] = useState('');
+  const [sugerenciaEstado, setSugerenciaEstado] = useState(''); // '', 'enviando', 'enviado', 'error'
+
+  async function enviarSugerencia() {
+    const texto = sugerenciaTexto.trim();
+    if (!texto) return;
+
+    setSugerenciaEstado('enviando');
+    try {
+      const res = await fetch('/api/sugerencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje: texto }),
+      });
+      if (res.ok) {
+        setSugerenciaEstado('enviado');
+        setSugerenciaTexto('');
+        setTimeout(() => {
+          setShowSugerencia(false);
+          setSugerenciaEstado('');
+        }, 1800);
+      } else {
+        setSugerenciaEstado('error');
+      }
+    } catch (e) {
+      setSugerenciaEstado('error');
+    }
+  }
+
   async function buscar(texto, eventType = 'busqueda') {
     const q = (texto ?? query).trim();
     if (!q) return;
@@ -60,9 +90,16 @@ export default function Home() {
 
       <div className="wrap">
         <header>
-          <div className="eyebrow">Información sobre autismo · Latinoamérica</div>
-          <h1>Entendamos<br />el Autismo</h1>
-          <p>Un espacio para encontrar respuestas claras sobre autismo en niños, adolescentes y adultos — buscá tu duda o explorá por tema.</p>
+          <div className="header-row">
+            <div>
+              <div className="eyebrow">Información sobre autismo · Latinoamérica</div>
+              <h1>Entendamos<br />el Autismo</h1>
+              <p>Un espacio para encontrar respuestas claras sobre autismo en niños, adolescentes y adultos — buscá tu duda o explorá por tema.</p>
+            </div>
+            <button className="suggestion-btn" onClick={() => setShowSugerencia(true)}>
+              Dejanos tu sugerencia
+            </button>
+          </div>
         </header>
       </div>
 
@@ -126,6 +163,41 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {showSugerencia && (
+        <div className="modal-overlay" onClick={() => setShowSugerencia(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Dejanos tu sugerencia</h3>
+            <p className="modal-sub">¿Hay algo que te gustaría ver en esta web, o algo para mejorar? Contanos.</p>
+            <textarea
+              rows={4}
+              value={sugerenciaTexto}
+              onChange={(e) => setSugerenciaTexto(e.target.value)}
+              placeholder="Escribí tu sugerencia acá..."
+              disabled={sugerenciaEstado === 'enviando' || sugerenciaEstado === 'enviado'}
+            />
+            {sugerenciaEstado === 'error' && (
+              <p className="modal-error">No se pudo enviar. Probá de nuevo.</p>
+            )}
+            {sugerenciaEstado === 'enviado' ? (
+              <p className="modal-success">¡Gracias! Tu sugerencia fue enviada.</p>
+            ) : (
+              <div className="modal-actions">
+                <button className="modal-cancel" onClick={() => setShowSugerencia(false)}>
+                  Cancelar
+                </button>
+                <button
+                  className="modal-send"
+                  onClick={enviarSugerencia}
+                  disabled={sugerenciaEstado === 'enviando' || !sugerenciaTexto.trim()}
+                >
+                  {sugerenciaEstado === 'enviando' ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <footer>Entendamos el Autismo</footer>
     </>
