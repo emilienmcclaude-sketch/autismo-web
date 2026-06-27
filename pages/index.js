@@ -101,6 +101,7 @@ export default function Home() {
               <div className="eyebrow">Información sobre autismo · Latinoamérica</div>
               <h1>Entendamos<br />el Autismo</h1>
               <p>Un espacio para encontrar respuestas claras sobre autismo en niños, adolescentes y adultos — buscá tu duda o explorá por tema.</p>
+<p className="header-note">Los textos que vas a ver son buscados y generados por inteligencia artificial a partir de fuentes confiables (organismos de salud y asociaciones de autismo reconocidas).</p>
             </div>
             <button className="suggestion-btn" onClick={() => setShowSugerencia(true)}>
               Dejanos tu sugerencia
