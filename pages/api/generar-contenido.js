@@ -24,29 +24,43 @@ Instrucciones:
 - No inventes estadísticas o datos que no puedas fundamentar; si no estás seguro de un dato puntual, hablá en términos generales.
 - Respondé en español, solo con el texto final (sin títulos tipo "Aquí está el texto", sin comillas envolventes).`;
 
+const MODELOS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+
 async function generarTextoConGemini(tema, apiKey) {
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: PROMPT_BASE(tema) }] }],
-        tools: [{ google_search: {} }],
-      }),
+  let ultimoError = null;
+
+  for (const modelo of MODELOS) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: PROMPT_BASE(tema) }] }],
+          tools: [{ google_search: {} }],
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || '';
     }
-  );
 
-  const data = await response.json();
+    if (data?.error?.code === 429) {
+      console.warn(`Cupo agotado en ${modelo} para "${tema}", probando siguiente modelo...`);
+      ultimoError = data;
+      continue;
+    }
 
-  if (!response.ok) {
     throw new Error(JSON.stringify(data));
   }
 
-  return data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || '';
+  throw new Error(JSON.stringify(ultimoError) || 'Todos los modelos sin cupo');
 }
 
 export default async function handler(req, res) {
