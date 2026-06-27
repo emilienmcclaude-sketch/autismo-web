@@ -7,6 +7,21 @@ Usá un tono cálido, claro y sin tecnicismos innecesarios. Estructura la respue
 No dés diagnósticos individuales; recordá siempre que cada caso debe consultarse con un profesional cuando sea relevante.
 Respondé en español, de forma concisa (máximo 180 palabras).`;
 
+async function buscarContenidoPorId(contenidoId) {
+  try {
+    const { data, error } = await supabase
+      .from('contenido')
+      .select('titulo, texto')
+      .eq('id', contenidoId)
+      .single();
+    if (error || !data) return null;
+    return data;
+  } catch (e) {
+    console.error('Error buscando contenido por id:', e);
+    return null;
+  }
+}
+
 async function buscarContenidoCurado(query) {
   try {
     const { data, error } = await supabase.from('contenido').select('titulo, texto').limit(50);
@@ -109,7 +124,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
-  const { query, eventType } = req.body;
+  const { query, eventType, contenidoId } = req.body;
 
   if (!query || typeof query !== 'string') {
     return res.status(400).json({ error: 'Falta la consulta (query)' });
@@ -131,7 +146,7 @@ export default async function handler(req, res) {
   }
 
   // 2. Buscar primero si hay contenido curado relacionado a la pregunta
-  const curado = await buscarContenidoCurado(query);
+  const curado = contenidoId ? await buscarContenidoPorId(contenidoId) : await buscarContenidoCurado(query);
 
   // 3. Llamar a Gemini (con el contenido curado como base, si existe)
   const apiKey = process.env.GEMINI_API_KEY;

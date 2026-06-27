@@ -2,16 +2,16 @@ import { useState, useRef } from 'react';
 import Head from 'next/head';
 
 const temas = [
-  { n: '01', t: '¿Qué es el autismo?', d: 'Definición, espectro, mitos y enfoques' },
-  { n: '02', t: 'Detección y diagnóstico', d: 'Señales por edad y proceso diagnóstico' },
-  { n: '03', t: 'Autismo en la niñez', d: '0 a 12 años: comunicación, sensorialidad, terapias' },
-  { n: '04', t: 'Autismo en la adolescencia', d: '13 a 18 años: identidad, vínculos, salud mental' },
-  { n: '05', t: 'Autismo en la adultez', d: 'Vida independiente, trabajo, relaciones' },
-  { n: '06', t: 'Familia y entorno cercano', d: 'Cómo acompañar, hermanos, autocuidado' },
-  { n: '07', t: 'Educación e inclusión', d: 'Derechos educativos y adaptaciones' },
-  { n: '08', t: 'Salud y bienestar', d: 'Comorbilidades, sueño, alimentación' },
-  { n: '09', t: 'Derechos y legislación', d: 'Marco legal por país en Latinoamérica' },
-  { n: '10', t: 'Comunidad y recursos', d: 'Testimonios, glosario, organizaciones' },
+  { id: 1, n: '01', t: '¿Qué es el autismo?', d: 'Definición, espectro, mitos y enfoques' },
+  { id: 2, n: '02', t: 'Detección y diagnóstico', d: 'Señales por edad y proceso diagnóstico' },
+  { id: 3, n: '03', t: 'Autismo en la niñez', d: '0 a 12 años: comunicación, sensorialidad, terapias' },
+  { id: 4, n: '04', t: 'Autismo en la adolescencia', d: '13 a 18 años: identidad, vínculos, salud mental' },
+  { id: 5, n: '05', t: 'Autismo en la adultez', d: 'Vida independiente, trabajo, relaciones' },
+  { id: 6, n: '06', t: 'Familia y entorno cercano', d: 'Cómo acompañar, hermanos, autocuidado' },
+  { id: 7, n: '07', t: 'Educación e inclusión', d: 'Derechos educativos y adaptaciones' },
+  { id: 8, n: '08', t: 'Salud y bienestar', d: 'Comorbilidades, sueño, alimentación' },
+  { id: 9, n: '09', t: 'Derechos y legislación', d: 'Marco legal por país en Latinoamérica' },
+  { id: 10, n: '10', t: 'Comunidad y recursos', d: 'Testimonios, glosario, organizaciones' },
 ];
 
 const sugerencias = [
@@ -100,7 +100,7 @@ export default function Home() {
     }
   }
 
-  async function buscar(texto, eventType = 'busqueda') {
+  async function buscar(texto, eventType = 'busqueda', contenidoId = null) {
     const q = (texto ?? query).trim();
     if (!q) return;
 
@@ -118,7 +118,7 @@ export default function Home() {
       const res = await fetch('/api/buscar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q, eventType }),
+        body: JSON.stringify({ query: q, eventType, contenidoId }),
       });
       const data = await res.json();
       setAnswer(data.answer || data.error || 'No pudimos obtener una respuesta.');
@@ -208,7 +208,7 @@ export default function Home() {
           <p>Toda la información organizada por etapa de vida y temática.</p>
           <div className="grid">
             {temas.map((tema) => (
-              <div key={tema.n} className="card" onClick={() => buscar(tema.t, 'clic_tema')}>
+              <div key={tema.n} className="card" onClick={() => buscar(tema.t, 'clic_tema', tema.id)}>
                 <span className="num">{tema.n}</span>
                 <h3>{tema.t}</h3>
                 <p>{tema.d}</p>
