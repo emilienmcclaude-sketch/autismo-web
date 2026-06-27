@@ -20,12 +20,17 @@ export default async function handler(req, res) {
 
   // 1. Registrar el evento en Supabase (no bloqueamos la respuesta si esto falla)
   try {
-    await supabase.from('eventos').insert({
+    const { error: insertError } = await supabase.from('eventos').insert({
       tipo: eventType || 'busqueda',
       contenido: query,
     });
+    if (insertError) {
+      console.error('Error guardando el evento en Supabase:', insertError);
+    } else {
+      console.log('Evento guardado correctamente en Supabase');
+    }
   } catch (logError) {
-    console.error('Error guardando el evento en Supabase:', logError);
+    console.error('Excepción guardando el evento en Supabase:', logError);
   }
 
   // 2. Llamar a la API de Gemini con búsqueda web habilitada
