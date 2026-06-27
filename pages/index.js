@@ -32,6 +32,48 @@ export default function Home() {
   const [sugerenciaEstado, setSugerenciaEstado] = useState(''); // '', 'enviando', 'enviado', 'error'
   const answerRef = useRef(null);
 
+  const [showContacto, setShowContacto] = useState(false);
+  const [contactoEstado, setContactoEstado] = useState(''); // '', 'enviando', 'error'
+  const [showGracias, setShowGracias] = useState(false);
+  const [form, setForm] = useState({
+    nombre: '',
+    apellido: '',
+    organismo: '',
+    email: '',
+    telefono: '',
+    texto: '',
+  });
+
+  function actualizarForm(campo, valor) {
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+  }
+
+  async function enviarContacto() {
+    if (!form.nombre.trim() || !form.apellido.trim() || !form.email.trim() || !form.texto.trim()) {
+      setContactoEstado('error');
+      return;
+    }
+
+    setContactoEstado('enviando');
+    try {
+      const res = await fetch('/api/contacto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setShowContacto(false);
+        setContactoEstado('');
+        setForm({ nombre: '', apellido: '', organismo: '', email: '', telefono: '', texto: '' });
+        setShowGracias(true);
+      } else {
+        setContactoEstado('error');
+      }
+    } catch (e) {
+      setContactoEstado('error');
+    }
+  }
+
   async function enviarSugerencia() {
     const texto = sugerenciaTexto.trim();
     if (!texto) return;
@@ -103,9 +145,14 @@ export default function Home() {
               <p>Un espacio para encontrar respuestas claras sobre autismo en niños, adolescentes y adultos — buscá tu duda o explorá por tema.</p>
               <p className="header-note">Los textos que vas a ver son buscados y generados por inteligencia artificial a partir de fuentes confiables (organismos de salud y asociaciones de autismo reconocidas).</p>
             </div>
-            <button className="suggestion-btn" onClick={() => setShowSugerencia(true)}>
-              Dejanos tu sugerencia
-            </button>
+            <div className="header-buttons">
+              <button className="suggestion-btn" onClick={() => setShowSugerencia(true)}>
+                Dejanos tu sugerencia
+              </button>
+              <button className="suggestion-btn contact-btn" onClick={() => setShowContacto(true)}>
+                Contactanos
+              </button>
+            </div>
           </div>
         </header>
       </div>
@@ -202,6 +249,102 @@ export default function Home() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showContacto && (
+        <div className="modal-overlay" onClick={() => setShowContacto(false)}>
+          <div className="modal-box modal-box-wide" onClick={(e) => e.stopPropagation()}>
+            <h3>Contactanos</h3>
+            <p className="modal-sub">Completá tus datos y te vamos a responder a la brevedad.</p>
+
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Nombre *</label>
+                <input
+                  type="text"
+                  value={form.nombre}
+                  onChange={(e) => actualizarForm('nombre', e.target.value)}
+                />
+              </div>
+              <div className="form-field">
+                <label>Apellido *</label>
+                <input
+                  type="text"
+                  value={form.apellido}
+                  onChange={(e) => actualizarForm('apellido', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-field">
+              <label>Organismo (si formás parte de uno)</label>
+              <input
+                type="text"
+                value={form.organismo}
+                onChange={(e) => actualizarForm('organismo', e.target.value)}
+              />
+            </div>
+
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => actualizarForm('email', e.target.value)}
+                />
+              </div>
+              <div className="form-field">
+                <label>Teléfono (opcional)</label>
+                <input
+                  type="tel"
+                  value={form.telefono}
+                  onChange={(e) => actualizarForm('telefono', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-field">
+              <label>Mensaje * ({form.texto.length}/150)</label>
+              <textarea
+                rows={3}
+                maxLength={150}
+                value={form.texto}
+                onChange={(e) => actualizarForm('texto', e.target.value)}
+                placeholder="Escribí tu mensaje acá..."
+              />
+            </div>
+
+            {contactoEstado === 'error' && (
+              <p className="modal-error">Revisá que completaste los campos obligatorios (*).</p>
+            )}
+
+            <div className="modal-actions">
+              <button className="modal-cancel" onClick={() => setShowContacto(false)}>
+                Cancelar
+              </button>
+              <button
+                className="modal-send"
+                onClick={enviarContacto}
+                disabled={contactoEstado === 'enviando'}
+              >
+                {contactoEstado === 'enviando' ? 'Enviando...' : 'Enviar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showGracias && (
+        <div className="modal-overlay" onClick={() => setShowGracias(false)}>
+          <div className="modal-box modal-thanks" onClick={(e) => e.stopPropagation()}>
+            <h3>¡Gracias por tu comentario!</h3>
+            <p className="modal-sub">Recibimos tu mensaje y te vamos a responder a la brevedad.</p>
+            <button className="modal-send" onClick={() => setShowGracias(false)}>
+              Volver a la página principal
+            </button>
           </div>
         </div>
       )}
