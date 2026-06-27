@@ -20,14 +20,14 @@ export default function Admin() {
   const [progreso, setProgreso] = useState(null); // { actual, total, temaActual }
   const [logGeneracion, setLogGeneracion] = useState([]);
 
-  async function generarContenido() {
+  async function generarContenido(soloIndices) {
     setGenerando(true);
-    setLogGeneracion([]);
-    let i = 0;
+    if (!soloIndices) setLogGeneracion([]);
     let total = 10;
+    const indices = soloIndices || Array.from({ length: total }, (_, i) => i);
 
-    while (i < total) {
-      setProgreso({ actual: i + 1, total });
+    for (const i of indices) {
+      setProgreso({ actual: indices.indexOf(i) + 1, total: indices.length });
       try {
         const res = await fetch('/api/generar-contenido', {
           method: 'POST',
@@ -37,21 +37,21 @@ export default function Admin() {
         const data = await res.json();
         if (data.total) total = data.total;
 
-        setLogGeneracion((prev) => [
-          ...prev,
-          { tema: data.tema || `Tema ${i + 1}`, ok: !!data.ok, error: data.error },
-        ]);
+        setLogGeneracion((prev) => {
+          const limpio = prev.filter((l) => l.tema !== (data.tema || `Tema ${i + 1}`));
+          return [...limpio, { tema: data.tema || `Tema ${i + 1}`, ok: !!data.ok, error: data.error, indice: i }];
+        });
       } catch (e) {
-        setLogGeneracion((prev) => [...prev, { tema: `Tema ${i + 1}`, ok: false, error: String(e) }]);
+        setLogGeneracion((prev) => [...prev, { tema: `Tema ${i + 1}`, ok: false, error: String(e), indice: i }]);
       }
-      i++;
-      // Pausa entre temas para no saturar el límite de solicitudes por minuto
       await new Promise((r) => setTimeout(r, 4000));
     }
 
     setGenerando(false);
     setProgreso(null);
   }
+
+  const fallidos = logGeneracion.filter((l) => !l.ok);
 
   async function ingresar() {
     setLoading(true);
@@ -152,10 +152,18 @@ export default function Admin() {
               <h2>Contenido curado</h2>
               <p>Generá los textos base de los 10 temas usando IA (se guardan en la tabla "contenido").</p>
             </div>
-            <button className="generar-btn" onClick={generarContenido} disabled={generando}>
-              {generando ? `Generando ${progreso?.actual || 0}/${progreso?.total || 10}...` : 'Generar contenido curado'}
+            <button className="generar-btn" onClick={() => generarContenido()} disabled={generando}>
+              {generando ? `Generando ${progreso?.actual || 0}/${progreso?.total || 10}...` : 'Generar contenido curado (los 10)'}
             </button>
           </div>
+          {fallidos.length > 0 && !generando && (
+            <button
+              className="reintentar-btn"
+              onClick={() => generarContenido(fallidos.map((f) => f.indice))}
+            >
+              ↻ Reintentar solo los {fallidos.length} que fallaron
+            </button>
+          )}
           {logGeneracion.length > 0 && (
             <div className="log-generacion">
               {logGeneracion.map((l, i) => (
@@ -240,6 +248,7 @@ export default function Admin() {
         .contenido-header p{margin:0;font-size:13.5px;color:#7A8276;}
         .generar-btn{background:#4F6F52;color:white;border:none;border-radius:9px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
         .generar-btn:disabled{opacity:.6;cursor:default;}
+        .reintentar-btn{background:none;border:1px solid #E8765B;color:#E8765B;border-radius:9px;padding:8px 14px;font-size:13px;cursor:pointer;margin-top:10px;}
         .log-generacion{margin-top:14px;border-top:1px solid #EDE3D0;padding-top:12px;display:flex;flex-direction:column;gap:5px;}
         .log-item{font-size:13px;}
         .log-item.ok{color:#4F6F52;}
