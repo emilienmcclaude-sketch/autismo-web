@@ -29,16 +29,25 @@ h1,h2,h3{
 header{padding:48px 0 36px;border-bottom:1px solid var(--line);}
 .header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;}
 @media (max-width:640px){.header-row{flex-direction:column;}}
-.header-buttons{display:flex;flex-direction:column;gap:10px;}
+.header-buttons{display:flex;flex-direction:column;gap:10px;width:240px;}
 .suggestion-btn{
   background:var(--white);border:1.5px solid var(--moss);color:var(--moss-deep);
   font-size:14px;font-weight:600;padding:11px 18px;border-radius:10px;
-  cursor:pointer;white-space:nowrap;font-family:'Source Sans 3',sans-serif;
-  transition:background .15s;
+  cursor:pointer;white-space:normal;font-family:'Source Sans 3',sans-serif;
+  transition:background .15s;width:100%;box-sizing:border-box;
 }
 .suggestion-btn:hover{background:var(--moss);color:var(--white);}
 .contact-btn{border-color:var(--coral);color:var(--coral);}
 .contact-btn:hover{background:var(--coral);color:var(--white);}
+.organismos-btn{border-color:#A98B5D;color:#A98B5D;}
+.organismos-btn:hover{background:#A98B5D;color:var(--white);}
+
+.organismos-resultado{
+  margin-top:8px;margin-bottom:14px;background:var(--sand);border-radius:10px;
+  padding:14px 16px;font-size:14.5px;line-height:1.55;color:var(--ink);
+}
+.organismos-resultado p{margin:0 0 10px;}
+.organismos-resultado p:last-child{margin-bottom:0;}
 
 .modal-box-wide{max-width:520px;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}

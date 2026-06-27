@@ -34,6 +34,33 @@ export default function Home() {
 
   const [showContacto, setShowContacto] = useState(false);
   const [contactoEstado, setContactoEstado] = useState(''); // '', 'enviando', 'error'
+
+  const [showOrganismos, setShowOrganismos] = useState(false);
+  const [ciudadOrg, setCiudadOrg] = useState('');
+  const [paisOrg, setPaisOrg] = useState('');
+  const [organismosEstado, setOrganismosEstado] = useState(''); // '', 'buscando', 'error'
+  const [organismosResultado, setOrganismosResultado] = useState('');
+
+  async function buscarOrganismos() {
+    if (!ciudadOrg.trim() || !paisOrg.trim()) {
+      setOrganismosEstado('error');
+      return;
+    }
+    setOrganismosEstado('buscando');
+    setOrganismosResultado('');
+    try {
+      const res = await fetch('/api/organismos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ciudad: ciudadOrg.trim(), pais: paisOrg.trim() }),
+      });
+      const data = await res.json();
+      setOrganismosResultado(data.answer || data.error || 'No pudimos encontrar resultados.');
+      setOrganismosEstado('');
+    } catch (e) {
+      setOrganismosEstado('error');
+    }
+  }
   const [showGracias, setShowGracias] = useState(false);
   const [form, setForm] = useState({
     nombre: '',
@@ -151,6 +178,9 @@ export default function Home() {
               </button>
               <button className="suggestion-btn contact-btn" onClick={() => setShowContacto(true)}>
                 Contactanos
+              </button>
+              <button className="suggestion-btn organismos-btn" onClick={() => setShowOrganismos(true)}>
+                Buscá organismos en tu ciudad
               </button>
             </div>
           </div>
@@ -345,6 +375,65 @@ export default function Home() {
             <button className="modal-send" onClick={() => setShowGracias(false)}>
               Volver a la página principal
             </button>
+          </div>
+        </div>
+      )}
+
+      {showOrganismos && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowOrganismos(false);
+            setOrganismosResultado('');
+            setOrganismosEstado('');
+          }}
+        >
+          <div className="modal-box modal-box-wide" onClick={(e) => e.stopPropagation()}>
+            <h3>Buscá organismos en tu ciudad</h3>
+            <p className="modal-sub">Decinos tu ciudad y país, y buscamos organizaciones de autismo cercanas.</p>
+
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Ciudad *</label>
+                <input type="text" value={ciudadOrg} onChange={(e) => setCiudadOrg(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>País *</label>
+                <input type="text" value={paisOrg} onChange={(e) => setPaisOrg(e.target.value)} />
+              </div>
+            </div>
+
+            {organismosEstado === 'error' && (
+              <p className="modal-error">Completá ciudad y país.</p>
+            )}
+
+            {organismosResultado && (
+              <div className="organismos-resultado">
+                {organismosResultado.split('\n').filter(Boolean).map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button
+                className="modal-cancel"
+                onClick={() => {
+                  setShowOrganismos(false);
+                  setOrganismosResultado('');
+                  setOrganismosEstado('');
+                }}
+              >
+                Cerrar
+              </button>
+              <button
+                className="modal-send"
+                onClick={buscarOrganismos}
+                disabled={organismosEstado === 'buscando'}
+              >
+                {organismosEstado === 'buscando' ? 'Buscando...' : 'Buscar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
