@@ -7,6 +7,35 @@ Usá un tono cálido, claro y sin tecnicismos innecesarios. Estructura la respue
 No dés diagnósticos individuales; recordá siempre que cada caso debe consultarse con un profesional cuando sea relevante.
 Respondé en español, de forma concisa (máximo 180 palabras).`;
 
+async function buscarContenidoCurado(query) {
+  try {
+    const { data, error } = await supabase.from('contenido').select('titulo, texto').limit(50);
+    if (error || !data || data.length === 0) return null;
+
+    const queryLower = query.toLowerCase();
+    const palabrasQuery = queryLower.split(/\s+/).filter((p) => p.length > 3);
+
+    let mejor = null;
+    let mejorPuntaje = 0;
+
+    for (const item of data) {
+      const tituloLower = item.titulo.toLowerCase();
+      const puntaje = palabrasQuery.filter(
+        (p) => tituloLower.includes(p) || queryLower.includes(tituloLower)
+      ).length;
+      if (puntaje > mejorPuntaje) {
+        mejorPuntaje = puntaje;
+        mejor = item;
+      }
+    }
+
+    return mejorPuntaje > 0 ? mejor : null;
+  } catch (e) {
+    console.error('Error buscando contenido curado:', e);
+    return null;
+  }
+}
+
 // Lista de modelos gratuitos, en orden de preferencia.
 // Si uno se queda sin cupo (error 429), se intenta automáticamente con el siguiente.
 const MODELOS = [
@@ -15,8 +44,17 @@ const MODELOS = [
   'gemini-2.0-flash',
 ];
 
-async function llamarGemini(query, apiKey) {
+async function llamarGemini(query, apiKey, contextoCurado) {
   let ultimoError = null;
+
+  const promptFinal = contextoCurado
+    ? `Contexto de referencia (usalo como base principal de tu respuesta, podés complementarlo si es necesario):
+"""
+${contextoCurado}
+"""
+
+Pregunta del usuario: ${query}`
+    : query;
 
   for (const modelo of MODELOS) {
     try {
@@ -29,9 +67,9 @@ async function llamarGemini(query, apiKey) {
             'x-goog-api-key': apiKey,
           },
           body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: query }] }],
+            contents: [{ role: 'user', parts: [{ text: promptFinal }] }],
             systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            tools: [{ google_search: {} }],
+            tools: contextoCurado ? undefined : [{ google_search: {} }],
           }),
         }
       );
@@ -92,9 +130,12 @@ export default async function handler(req, res) {
     console.error('Excepción guardando el evento en Supabase:', logError);
   }
 
-  // 2. Llamar a Gemini, probando varios modelos automáticamente si alguno se queda sin cupo
+  // 2. Buscar primero si hay contenido curado relacionado a la pregunta
+  const curado = await buscarContenidoCurado(query);
+
+  // 3. Llamar a Gemini (con el contenido curado como base, si existe)
   const apiKey = process.env.GEMINI_API_KEY;
-  const resultado = await llamarGemini(query, apiKey);
+  const resultado = await llamarGemini(query, apiKey, curado?.texto);
 
   if (resultado.ok) {
     return res.status(200).json({ answer: resultado.text });

@@ -16,6 +16,43 @@ export default function Admin() {
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState('todos');
 
+  const [generando, setGenerando] = useState(false);
+  const [progreso, setProgreso] = useState(null); // { actual, total, temaActual }
+  const [logGeneracion, setLogGeneracion] = useState([]);
+
+  async function generarContenido() {
+    setGenerando(true);
+    setLogGeneracion([]);
+    let i = 0;
+    let total = 10;
+
+    while (i < total) {
+      setProgreso({ actual: i + 1, total });
+      try {
+        const res = await fetch('/api/generar-contenido', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, temaIndex: i }),
+        });
+        const data = await res.json();
+        if (data.total) total = data.total;
+
+        setLogGeneracion((prev) => [
+          ...prev,
+          { tema: data.tema || `Tema ${i + 1}`, ok: !!data.ok, error: data.error },
+        ]);
+      } catch (e) {
+        setLogGeneracion((prev) => [...prev, { tema: `Tema ${i + 1}`, ok: false, error: String(e) }]);
+      }
+      i++;
+      // Pausa entre temas para no saturar el límite de solicitudes por minuto
+      await new Promise((r) => setTimeout(r, 4000));
+    }
+
+    setGenerando(false);
+    setProgreso(null);
+  }
+
   async function ingresar() {
     setLoading(true);
     setError('');
@@ -109,6 +146,28 @@ export default function Admin() {
         <title>Admin · Entendamos el Autismo</title>
       </Head>
       <div className="admin-wrap">
+        <div className="contenido-section">
+          <div className="contenido-header">
+            <div>
+              <h2>Contenido curado</h2>
+              <p>Generá los textos base de los 10 temas usando IA (se guardan en la tabla "contenido").</p>
+            </div>
+            <button className="generar-btn" onClick={generarContenido} disabled={generando}>
+              {generando ? `Generando ${progreso?.actual || 0}/${progreso?.total || 10}...` : 'Generar contenido curado'}
+            </button>
+          </div>
+          {logGeneracion.length > 0 && (
+            <div className="log-generacion">
+              {logGeneracion.map((l, i) => (
+                <div key={i} className={`log-item ${l.ok ? 'ok' : 'fail'}`}>
+                  {l.ok ? '✓' : '✗'} {l.tema}
+                  {l.error && <span className="log-error"> — {l.error}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="admin-header">
           <div>
             <h1>Registro de actividad</h1>
@@ -174,6 +233,18 @@ export default function Admin() {
 
       <style jsx>{`
         .admin-wrap{max-width:1000px;margin:0 auto;padding:32px 20px 60px;font-family:sans-serif;color:#26302A;}
+
+        .contenido-section{border:1.5px solid #4F6F52;border-radius:12px;padding:18px 20px;margin-bottom:28px;background:#FFFDF9;}
+        .contenido-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+        .contenido-header h2{margin:0 0 4px;font-size:18px;color:#374A39;}
+        .contenido-header p{margin:0;font-size:13.5px;color:#7A8276;}
+        .generar-btn{background:#4F6F52;color:white;border:none;border-radius:9px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;}
+        .generar-btn:disabled{opacity:.6;cursor:default;}
+        .log-generacion{margin-top:14px;border-top:1px solid #EDE3D0;padding-top:12px;display:flex;flex-direction:column;gap:5px;}
+        .log-item{font-size:13px;}
+        .log-item.ok{color:#4F6F52;}
+        .log-item.fail{color:#E8765B;}
+        .log-error{color:#9CA398;}
         .admin-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
         .admin-header h1{margin:0 0 4px;font-size:26px;color:#374A39;}
         .admin-header p{margin:0;color:#7A8276;font-size:14px;}
