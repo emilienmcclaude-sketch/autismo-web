@@ -145,10 +145,21 @@ export default async function handler(req, res) {
     console.error('Excepción guardando el evento en Supabase:', logError);
   }
 
-  // 2. Buscar primero si hay contenido curado relacionado a la pregunta
-  const curado = contenidoId ? await buscarContenidoPorId(contenidoId) : await buscarContenidoCurado(query);
+  // 2. Si viene un contenidoId (clic en un tema del índice), traemos ese contenido directo de Supabase, sin IA
+  if (contenidoId) {
+    const curado = await buscarContenidoPorId(contenidoId);
+    if (curado?.texto) {
+      return res.status(200).json({ answer: curado.texto });
+    }
+    return res.status(200).json({
+      answer: 'Todavía no hay contenido cargado para este tema. Vamos a agregarlo pronto.',
+    });
+  }
 
-  // 3. Llamar a Gemini (con el contenido curado como base, si existe)
+  // 3. Si no hay contenidoId (búsqueda libre), buscamos contenido relacionado por palabras clave
+  const curado = await buscarContenidoCurado(query);
+
+  // 4. Llamar a Gemini (con el contenido curado como base, si existe)
   const apiKey = process.env.GEMINI_API_KEY;
   const resultado = await llamarGemini(query, apiKey, curado?.texto);
 
