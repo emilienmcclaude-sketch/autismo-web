@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Head from 'next/head';
 
 const temas = [
@@ -30,6 +30,7 @@ export default function Home() {
   const [showSugerencia, setShowSugerencia] = useState(false);
   const [sugerenciaTexto, setSugerenciaTexto] = useState('');
   const [sugerenciaEstado, setSugerenciaEstado] = useState(''); // '', 'enviando', 'enviado', 'error'
+  const answerRef = useRef(null);
 
   async function enviarSugerencia() {
     const texto = sugerenciaTexto.trim();
@@ -65,6 +66,11 @@ export default function Home() {
     setShowPanel(true);
     setLoading(true);
     setAnswer('');
+
+    // Pequeño delay para que el panel ya esté visible en el DOM antes de hacer scroll
+    setTimeout(() => {
+      answerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
 
     try {
       const res = await fetch('/api/buscar', {
@@ -126,7 +132,7 @@ export default function Home() {
             ))}
           </div>
 
-          <div className={`answer-panel ${showPanel ? 'show' : ''}`}>
+          <div ref={answerRef} className={`answer-panel ${showPanel ? 'show' : ''}`}>
             <div className="answer-header">
               <div className="dot" />
               <span>RESPUESTA · BASADA EN FUENTES CONFIABLES</span>
