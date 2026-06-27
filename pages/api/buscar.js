@@ -5,7 +5,7 @@ Respondé SOLO basándote en información médica y educativa ampliamente acepta
 Si la pregunta no tiene relación con autismo, indicá amablemente que este espacio es específico sobre autismo.
 Usá un tono cálido, claro y sin tecnicismos innecesarios. Estructura la respuesta en párrafos cortos.
 No dés diagnósticos individuales; recordá siempre que cada caso debe consultarse con un profesional cuando sea relevante.
-Respondé en español, de forma concisa (máximo 220 palabras).`;
+Respondé en español, de forma concisa (máximo 180 palabras).`;
 
 // Lista de modelos gratuitos, en orden de preferencia.
 // Si uno se queda sin cupo (error 429), se intenta automáticamente con el siguiente.
