@@ -83,6 +83,9 @@ export default async function handler(req, res) {
   try {
     const texto = await generarTextoConGemini(tema, apiKey);
 
+    // Borramos cualquier versión anterior de este mismo tema, para evitar duplicados al reintentar
+    await supabase.from('contenido').delete().eq('tema', tema);
+
     const { error } = await supabase.from('contenido').insert({
       tema,
       titulo: tema.split('(')[0].trim(),
