@@ -51,8 +51,8 @@ async function generarTextoConGemini(tema, apiKey) {
       return data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || '';
     }
 
-    if (data?.error?.code === 429) {
-      console.warn(`Cupo agotado en ${modelo} para "${tema}", probando siguiente modelo...`);
+    if (data?.error?.code === 429 || data?.error?.code === 503) {
+      console.warn(`${modelo} no disponible (${data?.error?.code}) para "${tema}", probando siguiente modelo...`);
       ultimoError = data;
       continue;
     }

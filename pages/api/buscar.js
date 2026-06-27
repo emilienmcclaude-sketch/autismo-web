@@ -84,9 +84,9 @@ Pregunta del usuario: ${query}`
         return { ok: true, text };
       }
 
-      // Si es error de cuota (429), probamos el siguiente modelo de la lista
-      if (data?.error?.code === 429) {
-        console.warn(`Cupo agotado en ${modelo}, probando siguiente modelo...`);
+      // Si es error de cuota (429) o de sobrecarga del modelo (503), probamos el siguiente de la lista
+      if (data?.error?.code === 429 || data?.error?.code === 503) {
+        console.warn(`${modelo} no disponible (${data?.error?.code}), probando siguiente modelo...`);
         ultimoError = data;
         continue;
       }
