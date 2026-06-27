@@ -1,0 +1,133 @@
+import { useState } from 'react';
+import Head from 'next/head';
+
+const temas = [
+  { n: '01', t: '¿Qué es el autismo?', d: 'Definición, espectro, mitos y enfoques' },
+  { n: '02', t: 'Detección y diagnóstico', d: 'Señales por edad y proceso diagnóstico' },
+  { n: '03', t: 'Autismo en la niñez', d: '0 a 12 años: comunicación, sensorialidad, terapias' },
+  { n: '04', t: 'Autismo en la adolescencia', d: '13 a 18 años: identidad, vínculos, salud mental' },
+  { n: '05', t: 'Autismo en la adultez', d: 'Vida independiente, trabajo, relaciones' },
+  { n: '06', t: 'Familia y entorno cercano', d: 'Cómo acompañar, hermanos, autocuidado' },
+  { n: '07', t: 'Educación e inclusión', d: 'Derechos educativos y adaptaciones' },
+  { n: '08', t: 'Salud y bienestar', d: 'Comorbilidades, sueño, alimentación' },
+  { n: '09', t: 'Derechos y legislación', d: 'Marco legal por país en Latinoamérica' },
+  { n: '10', t: 'Comunidad y recursos', d: 'Testimonios, glosario, organizaciones' },
+];
+
+const sugerencias = [
+  'Señales tempranas en bebés',
+  'Autismo en la adolescencia',
+  'Diagnóstico en adultos',
+  'Cómo hablarle a otros niños sobre el autismo',
+];
+
+export default function Home() {
+  const [query, setQuery] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPanel, setShowPanel] = useState(false);
+
+  async function buscar(texto, eventType = 'busqueda') {
+    const q = (texto ?? query).trim();
+    if (!q) return;
+
+    setQuery(q);
+    setShowPanel(true);
+    setLoading(true);
+    setAnswer('');
+
+    try {
+      const res = await fetch('/api/buscar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q, eventType }),
+      });
+      const data = await res.json();
+      setAnswer(data.answer || data.error || 'No pudimos obtener una respuesta.');
+    } catch (e) {
+      setAnswer('Hubo un problema de conexión. Probá nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <>
+      <Head>
+        <title>Entendamos el Autismo</title>
+        <meta name="description" content="Información confiable sobre autismo en niños, adolescentes y adultos." />
+      </Head>
+
+      <div className="wrap">
+        <header>
+          <div className="eyebrow">Información sobre autismo · Latinoamérica</div>
+          <h1>Entendamos<br />el Autismo</h1>
+          <p>Un espacio para encontrar respuestas claras sobre autismo en niños, adolescentes y adultos — buscá tu duda o explorá por tema.</p>
+        </header>
+      </div>
+
+      <div className="wrap">
+        <div className="search-section">
+          <div className="search-box">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && buscar()}
+              placeholder="Escribí tu duda, por ejemplo: ¿cómo ayudo a mi hijo con los cambios de rutina?"
+            />
+            <button className="search-btn" disabled={loading} onClick={() => buscar()}>
+              {loading ? 'Buscando...' : 'Buscar'}
+            </button>
+          </div>
+
+          <div className="suggestions">
+            {sugerencias.map((s) => (
+              <div key={s} className="chip" onClick={() => buscar(s, 'clic_sugerencia')}>
+                {s}
+              </div>
+            ))}
+          </div>
+
+          <div className={`answer-panel ${showPanel ? 'show' : ''}`}>
+            <div className="answer-header">
+              <div className="dot" />
+              <span>RESPUESTA · BASADA EN FUENTES CONFIABLES</span>
+            </div>
+            <div className="answer-body">
+              {loading ? (
+                <div className="loading">
+                  <div className="spinner" />
+                  Buscando información confiable...
+                </div>
+              ) : (
+                answer.split('\n').filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
+              )}
+            </div>
+            <div className="disclaimer">
+              Esta respuesta es generada con IA a partir de fuentes públicas de salud y organizaciones de autismo. No reemplaza una consulta con un profesional.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="wrap">
+        <div className="index-section">
+          <h2>Explorar por tema</h2>
+          <p>Toda la información organizada por etapa de vida y temática.</p>
+          <div className="grid">
+            {temas.map((tema) => (
+              <div key={tema.n} className="card" onClick={() => buscar(tema.t, 'clic_tema')}>
+                <span className="num">{tema.n}</span>
+                <h3>{tema.t}</h3>
+                <p>{tema.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <footer>Entendamos el Autismo</footer>
+    </>
+  );
+}
